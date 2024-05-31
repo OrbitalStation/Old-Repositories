@@ -1,11 +1,11 @@
 [package]
 name = "const-trig"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 exclude = ["src/main.rs", ".idea", ".gitignore"]
 license = "GPL-3.0"
 readme = "README.md"
 description = "Rust crate providing const trig functions"
-repository = "https://github.com/Roman-Tarasenko-27/const-trig"
+repository = "https://github.com/OrbitalStation/Old-Repositories/tree/cosmos/used-by-crates.io/const-trig"
 keywords = ["trig", "trigonometry", "const", "sin", "cos"]
 categories = ["algorithms", "mathematics", "no-std"]

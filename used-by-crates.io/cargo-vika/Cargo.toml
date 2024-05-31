@@ -1,11 +1,11 @@
 [package]
 name = "cargo-vika"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 license = "GPL-3.0"
 description = "cargo tool to ease creating UEFI projects"
 documentation = "https://docs.rs/cargo_vika"
-repository = "https://github.com/Roman-Tarasenko-27/cargo-vika"
+repository = "https://github.com/OrbitalStation/Old-Repositories/tree/cosmos/used-by-crates.io/cargo-vika"
 keywords = ["uefi", "vika", "create", "project"]
 readme = "README.md"
 authors = ["Roman <romann.tarasenko@gmail.com>"]

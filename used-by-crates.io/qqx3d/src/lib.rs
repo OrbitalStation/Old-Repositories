@@ -1,9 +1,8 @@
 #![allow(incomplete_features)]
 #![feature(const_fn_floating_point_arithmetic)]
-#![feature(const_fn_trait_bound)]
 #![feature(trait_alias)]
-#![feature(const_generics)]
-#![feature(const_evaluatable_checked)]
+#![feature(adt_const_params)]
+#![feature(generic_const_exprs)]
 
 mod window;
 mod vec;

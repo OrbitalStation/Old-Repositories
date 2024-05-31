@@ -46,7 +46,7 @@ where T:
 ///
 /// You can use custom precision, by passing
 /// `Some(your_precision)` instead of `None` as `precision`.
-/// 
+///
 pub const fn lg <T> (x: T, precision: Option <usize>) -> T
 where T:
     ~const From <f32> +
@@ -66,7 +66,7 @@ where T:
 ///
 /// You can use custom precision, by passing
 /// `Some(your_precision)` instead of `None` as `precision`.
-/// 
+///
 pub const fn ln <T> (x: T, precision: Option <usize>) -> T
 where T:
     ~const From <f32> +

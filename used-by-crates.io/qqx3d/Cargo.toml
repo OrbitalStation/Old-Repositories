@@ -1,19 +1,17 @@
 [package]
 name = "qqx"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Roman <qqx.3d.rs@gmail.com>"]
 edition = "2018"
 license = "GPL-3.0"
 description = "qqx is a 3d library for rust based on OpenGL"
-repository = "https://github.com/qqx3d/qqx3d.github.io"
+repository = "https://github.com/OrbitalStation/Old-Repositories/tree/cosmos/used-by-crates.io/qqx3d"
 readme = "README.md"
-homepage = "https://qqx3d.github.io"
 documentation = "https://docs.rs/qqx"
 keywords = ["graphic", "graphics", "game"]
 categories = ["game-development", "games", "gui", "graphics"]
-exclude = ["src/main.rs", "index.html", ".gitignore", "examples"]
 
 [dependencies]
 glium = "0.30.1"
 ctor = "0.1.20"
-qqx-macro = "0.0.3"
+qqx-macro = "0.0.4"

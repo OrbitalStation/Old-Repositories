@@ -35,7 +35,7 @@ impl Item {
         }
     }
 
-    pub const fn data(&'a self, ) -> &'a String {
+    pub const fn data (&self, ) -> &String {
         match self {
             Specified(x) => x,
             Shader(x, _) => x,
