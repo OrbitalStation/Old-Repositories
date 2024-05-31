@@ -1,0 +1,9 @@
+builtin ty i32
+
+@macro.type = "attribute"
+builtin fun extern()
+
+@extern
+fun puts(str: ptr) -> i32
+
+fun main() = puts(c"Hello, world!")

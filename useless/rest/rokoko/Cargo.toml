@@ -1,0 +1,53 @@
+# ------------------------------------------------- #
+# -------------------- PACKAGE -------------------- #
+# ------------------------------------------------- #
+
+[package]
+name = "rokoko"
+version = "0.0.0"
+
+# ------------------------------------------------------ #
+# -------------------- DEPENDENCIES -------------------- #
+# ------------------------------------------------------ #
+
+[dependencies]
+cfg-if = "1"
+
+[dependencies.winit]
+version = "0.26"
+optional = true
+
+[dependencies.raw-window-handle]
+version = "0.4"
+optional = true
+
+# If toolchain is `nightly` then use `nightly` feature of `rokoko-macro`
+[target.'cfg(nightly)'.dependencies.rokoko-macro]
+path = "rokoko-macro"
+features = ["nightly"]
+
+# Otherwise
+[target.'cfg(not(nightly))'.dependencies.rokoko-macro]
+path = "rokoko-macro"
+
+# -------------------------------------------------- #
+# -------------------- FEATURES -------------------- #
+# -------------------------------------------------- #
+
+[features]
+default = ["math", "window"]
+
+# Provides convenient mathematical types, functions, etc.
+math = []
+
+# Provides `window` ecosystem and everything connected to it
+#
+# Requires nightly Rust.
+window = ["dep:winit", "dep:raw-window-handle"]
+
+# ------------------------------------------------------------ #
+# -------------------- BUILD-DEPENDENCIES -------------------- #
+# ------------------------------------------------------------ #
+
+[build-dependencies]
+rustc_version = "0.4"

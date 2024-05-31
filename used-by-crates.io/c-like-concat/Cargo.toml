@@ -1,0 +1,14 @@
+[package]
+name = "c-like-concat"
+version = "0.0.4"
+edition = "2021"
+license = "GPL-3.0"
+description = "simple macro that works just like C's ##"
+documentation = "https://docs.rs/c_like_concat"
+repository = "https://github.com/Roman-Tarasenko-27/c-like-concat"
+readme = "README.md"
+keywords = ["concat", "clike", "c-like"]
+exclude = ["src/main.rs", ".gitignore"]
+
+[lib]
+proc-macro = true

@@ -1,0 +1,7 @@
+any = axiom["A"]
+fun = axiom["F"]
+Ty  = axiom["T"]
+
+id = x: any -> x
+
+main = id

@@ -1,0 +1,10 @@
+.idea
+target
+.vscode
+
+Cargo.lock
+
+
+# Maybe exlude these too?
+#utils.py
+#byte

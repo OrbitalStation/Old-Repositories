@@ -1,0 +1,20 @@
+alias result[T] = result[T AllocError]
+
+pub idea Allocator
+    @where allocPtrCheck(retVal, layout)
+    fun alloc.*(layout: layout) -> result[ptr]
+
+    @where metadata::each(ptr).allocatedBy.map { it == typeid::of[Y] }.unwrapOr(no)
+    fun dealloc.*(ptr: ptr)
+
+* Since this fun is used in `where` it MUST return `yes` for the code to compile,
+*   therefore the compiler would try to prove *everything* is in the correct state
+*   for it to be possible, and so will ensure that `Allocator` implementor can
+*   guarantee *in compiletime* that the returned pointer upholds the contract
+fun allocPtrCheck(ptr: result[ptr], layout: layout) -> bool
+    val ptr = ptr.unwrapOr { return no }
+    val md = metadata::each(ptr)
+    assert? !md.isReadonly
+    assert? md.memBytesLen == layout.len
+    assert? md.memState.isValid
+    return yes

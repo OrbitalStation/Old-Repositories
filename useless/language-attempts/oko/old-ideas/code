@@ -1,0 +1,191 @@
+* Comment
+
+* By default parentheses and commas are required in fun calls, however
+*	if function has 0 args or if the last argument of a function is a lambda
+*	then they can be omitted
+* Also there's an attribute `@nobrackets` that will remove brackets and commas from call
+* 	and make it look like Haskell's fun call
+
+* fn sum(x: u8, y: u8, z: u8) -> u8 {
+*	x + y + z
+* }
+fun sum(x y z: u8) -> u8
+	return x + y + z
+
+fun sum2(x y z: u8) -> u8 = x + y + z
+
+* Not available yet. Has deduced return type
+fun sum3(x y z: u8) = x + y + z
+
+* `@inherits` adds all of the methods of the type to self
+*   and adds field `inner` (in this case) that is the parent
+*   and contains its fields.
+* It does generate idea implementations of the parent
+* It also allows to use this type instead of the former, but not
+* 	through vtables as in other languages with inheritance, but
+*	through generic programming
+*
+* `LOWER` and `UPPER` are generic constants. They must go after all the generic types
+@inherits("u8").as = "inner"
+ty RestrictedU8[val LOWER UPPER: u8]
+
+* `...` skips all the places and, in this case, says that they should be filled
+* with default generics, i.e. it transforms to `inj[val LOWER UPPER: u8] RestrictedU8[LOWER UPPER]`
+inj RestrictedU8[...]
+	* `@override` is used to redefine a method of the parent
+	* redefined methods must have the same signature with possible
+	*	extension of it, i.e. parent's method accepts one argument `impl AAA + BBB`,
+	*	and heir's method accepts argument of type `impl AAA`, i.e. it extends number
+	*	of accepted inputs, but it can not do it vice versa.
+	@override @pub fun doSmth() = ...
+
+* Implements an idea for a type
+inj Add in RestrictedU8[...]
+    * Attribute macros that do not accept any arguments may also be used without `@`
+    override alias Output = Me
+
+    * `override` because it overrides the default implementation from `@inherits`,
+    *   though it does the very same job
+    override fun add(other: Me) -> Me = Me::new(i.inner.add(other.inner))
+
+* `withProvider.fun` here indicates that its not a field that should be added but instead
+* 	a value provider that supplies the parent type
+* Provider fun must have signature `fun.~ -> ~T`
+@inherits("T").withProvider.fun = "Me::get"
+pub ty Lazy[T]
+    * `default` here is an attribute `@default` that (when used on a field)
+    *   specifies that this fields should not be asked for in `new` and
+    *   filled with default value instead
+    default value: optional[T]
+
+    * Functions do not require parentheses on call if they have one or zero positional arguments,
+    *   and so do function pointers and enum variants
+    * However these three things may still not require parentheses even on 2+ arguments
+    *   if they have specified `@nobrackets` attribute
+    fn: fun -> T
+
+* `:=` is an assignment operator and it also returns the value it has just assigned
+* `choose` is Rust's `match`
+* Also, `if` is just a macro over `choose`
+* `block` is just a figure braces-delimited block in Rust,
+*   i.e. it simply introduces another level of nesting
+* `break` breaks out of the nearest block,
+*   but it can also accept label of the upper block
+*   and break out of it.
+* `return` is just a break with label of the most nested function
+* By default, methods capture `i` as `&Me` (or, which is the same, std::ref[Me]),
+*   because if no capture type is explicitly provided it is implicitly set to `.&`
+* `.~` capture type used here sets the type of `i` to `~Me` (std::fc::FloatingCapture[Me ACTUAL_CAPTURE])
+*   and adds implicit const generic `ACTUAL_CAPTURE: std::fc::Variants` which you do not
+*   need to specify as it will be done automatically. This deduced actual capture is determined based on
+*   the desired variant of capture(either by mutable/ordinary ref or by value) that is needed by the caller
+* `~Type` transforms to `std::fc::FloatingCapture[Type ACTUAL_CAPTURE]`, where `ACTUAL_CAPTURE` must be
+*   defined through `.~` described above
+* `~expression` tries to transform the expression into the desired capture type
+*   and triggers compilation error if that expressions cannot be captured in all forms
+inj Lazy[...]
+    fun get.~ -> ~T = choose i
+        * Enum's name may be omitted in `choose`(i.e. `Variant` and not `Enum::Variant`)
+        Some x => ~x
+        None => block
+            i.value := Some i.fn
+            break ~i.value
+
+* Example:
+*   enum MyOption[T] = None or Some T
+*   inj MyOption[...] fun unwrapOr(value: T) = choose i
+*       Some x => x
+*       None => value
+*
+*   fun complexCalculations() = 3
+*
+*   val x = MyOption::None
+*   assert x.unwrapOr(lazy { complexCalculations + 24 }) == 27
+pub fun lazy[T](delayed: fun -> T) = Lazy::new(delayed)
+
+idea Deref
+    alias Target
+    fun deref.~ -> ~Me::Target
+
+* `ups`(Unsigned integer of Platform Size) == Rust's `usize`
+* `@inherits` may also be used on generics
+* `Types...` here means that `Tuple` accepts any number of template parameters
+* Example: `Types` of `Tuple[ups, i32, bool]` has type `std::TypeList[std::TypeList::Cons[u8, Cons[i32, Cons[bool, std::TypeList::Nil]]]]`
+@inherits("Types")
+ty Tuple[Types...]
+
+* `unit` == `Tuple[]` == Rust's `()` == Kotlin's `Unit`
+alias unit = Tuple[]
+
+ty RepeatTypeImpl[T val REMAIN: ups]
+
+* `..` works as `...` described above but it only skips one position
+inj RepeatTypeImpl[.. 0] alias Result = Nil
+
+* `@where` specifies a condition required for this `inj` to work
+* Compiler proves that `Result` always exist on type `Me[T, N - 1]` and so lets this code compile
+* Possible way to implement such checking:
+*   1. Find all the `inj`s where `Result` is provided(this one and the one above)
+*   2. See which conditions do they cover(they cover any type `T` and any value of `N`)
+*   3. See which conditions are given here(any type `T` and `N - 1`, where `N` is any value of `ups` so
+*       `N - 1` covers all the values of `ups` except for `ups::MAX`)
+*   4. See if conditions from pt. 3 are fully contained within conditions from pt. 2
+*   5. If they do, then `Result` always exists. Otherwise it does not and so it's time
+*       to trigger compilation error
+@where N > 0
+inj RepeatTypeImpl[...] alias Result = Cons[T, Me[T, N - 1]::Result]
+
+alias RepeatType[T, val TIMES: ups] = std::TypeList[RepeatTypeImpl[T, TIMES]::Result]
+
+@inherits RepeatType[T, N]
+ty Array[T, val N: usize]
+
+* std::meta::isDivergent(&fun) <-- returns yes if a function may not return
+* std::meta::doesReturn(&fun) <-- returns yes if a function may return
+
+ty Mallocator
+
+inj Allocator in Mallocator
+    fun alloc(layout: Layout) = malloc(layout.size)
+
+	@where std::meta::isOrigin(ptr, Me::alloc)
+    fun dealloc(ptr: std::ptr, ...) = free(ptr)
+
+extern fun malloc(num: ups) -> std::ptr
+extern fun free(ptr: std::ptr)
+
+* dyn Idea <-- an indicator of an unsized type that implements an idea
+* std::vtable <-- a pointer to a virtual function table for an idea(Unsized::Metadata for ideas)
+
+* Metadata for slices: `ups` <- just length of the slice
+* 	for ideas: `std::vtable` <- pointer to a virtual function table
+
+* Has implicit refs and so has implicit requirement that these refs live
+*	until it goes out of scope
+pub enum Command[Seq]
+	GetCursor fun(Seq)
+	SetCursor fun -> Seq
+
+alias Executor = fun(Command[Seq])
+alias Callback = fun(Seq::Item, Executor)
+
+pub fun loopThrough[Seq]($seq: box[dyn Iterator], callback: Callback)
+	* `@closure` allows a function to capture vals from the outer scope
+	* This function implicitly captures `seq` and so has a requirement for `seq` to live
+	*	until it goes out of scope
+	closure fun executor(command: Command[Seq]) = choose command
+		GetCursor cb => cb.call(seq.clone)
+		SetCursor cb => seq := cb.call
+
+	loop callback.call(seq.next.unwrapOr { break }, box::new(&executor))
+
+enum IntSign = Signed or Unsigned
+
+* `builtin` is a compiler-provided macro indicating that the item it is applied to
+*	cannot be expressed by the language's capabilities at this point and so should be
+*	instead defined by the compiler
+builtin ty RestrictedInt[val SIGN: IntSign, BITS: uint]
+
+@extern
+fun puts(str: std::ptr) -> i32
+fun main() = puts(c"Hello, world!")

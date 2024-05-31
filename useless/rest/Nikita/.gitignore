@@ -1,0 +1,7 @@
+.idea
+cmake-build-debug
+__pycache__
+venv
+
+dialog.wav
+

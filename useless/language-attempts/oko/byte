@@ -1,0 +1,35 @@
+* There are two main entities to impose restrictions on a type:
+*   `ideas` and `contracts`
+* `Ideas` are regular Rust's `trait`s, nothing so special here -
+*   - they describe restrictions on the type definition:
+*   required methods, aliases, constants, etc.
+* Whilst `contracts` impose restrictions on values that
+*   may be present in an instance of that type
+
+pub copyable builtin ty byte
+
+* This contract requires that value `Y::from(0)` is *never* present in any
+*   instance of the type
+contract nonZero inherits Eq, From[int] = x != Y::from(0)
+
+* `inherits` here works in two ways
+* Firstly, it inherits all the properties, methods, functions, etc.
+*   of the type `u8`
+* Secondly, it inherits the contract `nonZero` so now the compiler
+*   closely watches after any instance of that type to ensure
+*   that instance never breaks the contract
+pub ty NonZeroU8 inherits u8, nonZero
+
+contract eqProperties inherits Eq
+    * Reflexivity
+    * `x` implicitly brought into the scope
+    x == x
+    * Symmetry
+    * `if`s which return `bool` in the main branch may omit the `else` one
+    *   when used in an expression as it will implicitly return `no`
+    if x == y then y == x
+    * Transitivity
+    if x == y and y == z then x == z
+
+idea Eq inherits eqProperties
+    fun eq(other: Y) -> bool

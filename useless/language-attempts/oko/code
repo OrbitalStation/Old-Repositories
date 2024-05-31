@@ -1,0 +1,10 @@
+* hi there
+fun doSmth() -> unit
+	ty AAA
+
+	fun xxx() -> unit
+		ty FFF
+		fun zzz() -> AAA
+			return 4
+
+ty unit

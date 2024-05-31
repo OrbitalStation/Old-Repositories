@@ -1,0 +1,217 @@
+* IDE-based
+* Aims at improving the productivity of a programmer
+* Little to no boilerplate
+* Short and clear syntax
+
+* Single line comment
+
+* Enum of values `None` and `Some` containing some value
+* Methods `isNone` and `isSome` are defined automatically
+enum optional
+	None
+	Some T
+
+	* Takes `i` by ref
+	map.& mutator: λT -> U = choose i
+		None => None
+		Some value => Some mutator value
+
+enum result = Ok T | Err E
+	or.& pred: λE -> T = choose x
+		Ok value => value
+		Err error => pred error
+
+* Enum of two values `yes` and `no`
+enum bool = yes | no
+
+idea Iterator
+	* An associated type
+	ty Item
+
+	* Rust equivalent:
+	* fn next(&mut self) -> &Self::Item;
+	next.$ -> optional Y.Item
+
+	* Rust equivalent:
+	* fn isExhausted(&self) -> bool;
+	isExhausted.& -> bool
+
+* The keyword `ty` creates an enum type with one variant `new`, i.e.
+*   ty Filter = iter: I + pred: P
+* is equivalent to
+*   enum Filter = new iter: I + pred: P
+* Variants of an `enum` may contain tuple values,
+*   e.g. `enum optional = None | Some T`,
+*   may contain fields, e.g. `enum Position = Global | Local place: Place`
+*   or not contain anything at all, e.g. `enum bool = yes | no`
+
+* A variant of a type can be constructed like this: `bool.yes`, `Filter.new` with
+*   arguments next if any data was attached, e.g. `Filter.new <expr of type I> <expr of type P>`
+*
+* If a type has one variant then it is possible to access its attached data through
+*   a dot-notation, i.e. `Filter.iter` or `Filter.pred`
+*
+* Tuples are also instances of enums with default variant `new`
+*
+* Also, those `I` and `P` are generics.
+* If a single uppercase letter is met where a type was expected,
+*   it is automatically added to generics list(if it's not here already, of course)
+* Generics might also be specified before the type definition, e.g. `template I P\nty Filter` in this case
+ty Filter
+	iter: I
+	pred: P
+
+* `impl <idea> :: <type>` means implementation of an idea to that given type.
+* Rust: `impl <I: ..., P: ...> Iterator for Filter <I, P>`
+* Note that it is necessary to indicate I and P here.
+*   They are passed to the `Filter` and automatically added to the `impl`'s generics
+impl Filter I P :: Iterator
+	ty Item = I.Item
+
+	* Takes `i` by a mutable ref
+	* `?` operator is placed before an expression
+	* `@` operator binds a name to an expression
+	* `.call` is needed here because fields, unlike methods,
+	*   are not eager to be called and aren't instantly called,
+	*   and this `.call` specifies we want it
+	next.$ -> optional Y.Item = loop if i.pred.call (?next i.iter)@elem => break Some elem
+	
+	isExhausted.& = i.iter.isExhausted
+where
+	I: Iterator
+	* `λI.Item -> bool` is a special case in this case,
+	*   it's not a type of a function, but a description of a signature for a functor
+	P: λI.Item -> bool
+
+idea Add
+	ty Return
+	add other: U -> Y.Return
+* This means that `U` may not be specified and
+*	would be replaced with `Y`, which is an alias
+*	to the very type that implements the idea
+where U defaultsto Y
+
+* Ideas can also be shortened
+* `Default `is implemented automatically on every type
+idea Default = const DEFAULT: Y
+
+idea Sum = sum.! Y -> Y.Item
+where Y: Iterator
+
+impl Sum :: I
+	* Takes `i` by-value(Rust's `self`)
+	sum.! I -> I.Item
+		$s = I.Item.DEFAULT
+		for e in i do s += e
+		return s
+where
+	I: Iterator
+	I.Item: Default + Add
+
+* `value |> func args...` is equivalent to
+* `func value args...`
+* This operator exists to make the code clearer and cleaner
+eulerTask1 = Filter.new 0..1000 { it % 3 == 0 or it % 5 == 0 } |> sum |> println
+
+* Hello, world!
+println "Hello, world!"
+
+* Guessing game
+
+use std.cmp.Ordering.*
+
+println "Guess the number!"
+
+secretNumber = getRandom 1..=100
+
+loop
+	println "Please input your guess"
+
+	* That lambda ignores the error given and just
+	*	invokes `continue`
+	* `continue` has the return type of `!`, and
+	* 	`input.trim.parse <u32>` has type of `u32`,
+	*	but `or` requires for them to be equal,
+	*	so how does it work?
+	* This works because `!` type implements
+	*	implicit cast to any other type
+	guess = input.trim.parse <u32>.or { continue }
+
+	* Inside a string literal `$` and a name following it
+	* 	inserts the value of a variable into
+	* Duplicate it to use `$` as a character - `$$`
+	println "You guessed: $guess"
+
+	choose secretNumber.cmp guess
+		Less => println "Too small!"
+		Greater => println "Too big!"
+		Equal => println "You win!"
+			break
+
+* Rectangle
+ty Rectangle = width height: u32
+	square.* size: u32 = Y.new size size
+
+	area.& = i.width * i.height
+
+rect1 = Rectangle.new 30 50
+
+println "rect1 is $rect1"
+
+* Inside a string literal `{ ... }` inserts
+*	a value of `...` inside it
+println "Area of the rect1 is {area rect1}"
+
+ty Point = x y: i32
+
+ty Message
+	Quit
+	Move Point
+	Write Str
+	ChangeColor Color
+
+ty Coin
+	Penny
+	Nickel
+	Dime
+	Quarter
+
+valueInCents coin: Coin = choose coin
+	Penny => block
+	    println "A lucky penny!"
+		1
+	Nickel => 5
+	Dime => 10
+	Quarter => 25
+
+
+* Double each value
+([1 2 3 4].iter.map { it * 2 }).collect::Vec i32
+
+* Sum all values
+[1 2 3 4].iter.sum
+
+idea Iterator
+	ty Item
+	next.$ -> optional Item
+
+ty Map
+	iter: I
+	mutator: M
+
+* `template` not necessary here since all of these are added to generics list automatically
+template I M U
+impl Map I M :: Iterator
+	ty Item = U
+	next.$ -> optional Item = i.iter.next.map i.mutator
+where
+	I: Iterator
+	M: λI.Item -> U
+
+* 1 2 3 4 ... 999 1000
+(1..=1000).iter.map { println "$it" }.consume
+
+* 1 2 3 4 ... 999 1000
+(1..=1000).iter.map {
+    println "$it"
+}.consume

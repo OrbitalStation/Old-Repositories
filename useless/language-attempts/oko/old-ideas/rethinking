@@ -1,0 +1,73 @@
+* No explicit refs in the language - neither mutable or non-mutable
+* However every value passed to a function is passed by a reference
+* 	(or by value if a type is copyable)
+* Values may be mutated inside of a function
+
+* Contract defines a requirement that may be used on a type
+* The contract must *always* be upheld, and that means the the compiler
+* 	itself would follow it
+* That is, you need to prove to the compiler that the contract is always upheld
+* The difference between contracts and ideas is that contracts describe
+*	requirements of a value whilst ideas impose reqs on a type
+contract OneOrZero requires Integer = ∀x: x == 0 or x == 1
+
+contract Equality requires Eq
+	∀x:     x == x
+	∀x y:   if x == y then y == x else yes
+	∀x y z: (x == y and y == z).then { x == z }
+
+* An idea(Rust's trait) of an integer
+idea Integer inherits Add + Sub + Div + Mul + From[int] + Eq + ...
+
+idea Eq where Me is Equality
+	fun eq(other: Me) -> bool
+
+fun maxInterval($list: [impl Integer + OneOrZero]) -> ups
+	val $immediateOnesToTheLeft = 0
+	val $maxLen = 0
+	val $idx = 0
+	* equivalent to `list := list.insert(idx=0, value=0)`
+	list.$insert(idx=0, value=0)
+	while idx < list.len
+		val immediateOnesToTheRight = list[idx + 1..].find(0).unwrapOr(lazy { lst.len - idx - 1 })
+		maxLen := std::max(maxLen, immediateOnesToTheLeft + immediateOnesToTheRight)
+		immediateOnesToTheLeft := immediateOnesToTheRight
+		idx += immediateOnesToTheRight + 1
+	return maxLen
+
+fun collapse($list: [impl Integer]) -> str
+	capture fun flush = r += start.into[str] + if start == prev then "" else "-{prev}"
+
+	* `list[0]` used below requires that a list is non-empty
+	* That requirement could've been exposed in argument list above,
+	*	but it can also be proved like this
+	if list.isEmpty then return s""
+
+	list.$sort
+
+	val $r = s""
+	val $start = list[0]
+	val $prev = list[0]
+	for num in list.iter.skip
+		if num != prev + 1
+			flush
+			r += ','
+			start := num
+		prev := num
+	flush
+	return r
+
+fun convert(s: str) -> str?
+	if s.isEmpty then return Some(s"")
+
+	val $r = s""
+	val $prev = s[0]
+	val $occurs = 1
+	for ch in s.iter.skip.chain(' ')
+		if !ch.isAlpha or !ch.isUpper then return None
+		if ch != prev
+			r += prev + if occurs != 1 then occurs as str else s""
+			occurs := 0
+		prev := ch
+		++occurs
+	return r

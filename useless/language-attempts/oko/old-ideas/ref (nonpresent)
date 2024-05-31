@@ -1,0 +1,69 @@
+* `@default` implements `new` only if all fields of a type have a public static method `new`
+
+pub ty RefObservers = pub mut nonmut: ups
+
+inj RefObservers
+    pub fun inc(isReadonly: bool) = i.apply(isReadonly, { it + 1 })
+
+    pub fun dec(isReadonly: bool) = i.apply(isReadonly, { it - 1 })
+
+    pub fun total = i.mut + i.nonmut
+
+    pub fun apply(isReadonly: bool, action: fun(ups) -> ups) = if isReadonly then i.nonmut.with(&action) else i.mut.with(&action)
+
+pub ty RefGlobalCompilerMetadata
+	pub observers: Map[UniqueValueID, RefObservers]
+
+pub ty RefEachCompilerMetadata
+	pub value: UniqueValueID
+
+* The attribute that applies another attribute only if a condition is true
+@where.attr("copyable") if "IS_READONLY and std::isCopyable[T::Metadata]"
+* Unlike `@metadata.set(each)` this specifies global metadata for the type that is
+*	accessible inside each instance of the type and is shared between them
+@metadata.set("global") = "RefGlobalCompilerMetadata"
+@metadata.set("each") = "RefEachCompilerMetadata"
+@default.new.rename("__new").vis("private")
+@where T: Unsized
+pub ty ref[T val IS_READONLY: bool]
+	meta: T::Metadata
+	ptr: ptr
+
+* &value --> ref[T yes] and ref.ptr.metadata == (Valid, std::sizeof[T], Some(std::typeid::of[T]), yes, None)
+* $value --> ref[T no] and ref.ptr.metadata == (Valid, std::sizeof[T], Some(std::typeid::of[T]), no, None)
+
+inj ref[...]
+	* Metadata is a compiletime entity and so can be modified only through attrs
+	* `value` is marked with `@compiletime` here so that it can be used in attributes
+	* `UniqueValueID` is a special ID assigned to each lvalue and is unique amongst them
+	@where metadata::each(&ptr).isValidPtrToOneObject[T] and metadata::each(&ptr).isReadonly == IS_READONLY
+	@metadata.with("global").as("md").inline = "md.observers[value].inc(IS_READONLY)"
+	@metadata.with("each").as("md").inline = "md.value := value"
+	pub fun new.*(meta: T::Metadata, ptr: ptr, @compiletime value: UniqueValueID) = Me::__new(meta, ptr)
+
+	pub fun underlyingPtr = i.ptr
+
+	* `compiletime` in fun definition is optional, but is here to clearly state the compiletimeness of it
+	* Performs the drop of the metadata when ref goes out of scope
+	compiletime fun dropMetadata(global: RefGlobalCompilerMetadata, each: RefEachCompilerMetadata) -> RefGlobalCompilerMetadata
+		global.observers[each.value].dec(IS_READONLY)
+
+inj Drop in ref[...]
+	@metadata.with("global").as("global").fun = "Me::dropMetadata"
+	@metadata.with("each").as("each").fun = "Me::dropMetadata"
+	fun drop.! = pass
+
+* This check is always true but the compiler still needs it
+@where metadata::each(&i.ptr).pointsTo.isSome
+inj Deref in ref[...]
+	alias Target = T
+
+    * Deref of ptr will check for some correctness, e.g. a $ borrow on a nonmut ref or moving out of it
+    *   and prevent it from compiling, so don't have to worry about it here
+    * However, we still need to worry about mutable refs
+	fun deref.~ -> ~Me::Target
+	    if ACTUAL_CAPTURE.isMutable and metadata::global(i).observers.total > 1
+	        panic("cannot borrow a value as mutable because it is already borrowed")
+	    if metadata::global(i).observers.mut > 0
+	        panic("cannot borrow a value because it is already borrowed as mutable")
+	    return *i.ptr

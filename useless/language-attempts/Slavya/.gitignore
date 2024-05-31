@@ -1,0 +1,20 @@
+# IDE folders
+.idea
+.vscode
+
+# Python specifics
+venv
+__pycache__
+
+# Cargo specifics
+compiled/target
+compiled/Cargo.lock
+
+# Compiled
+compiled/src/main.rs
+
+# Wannabe language concepts; not intented to be shown
+exampleCode.🌲
+
+# Temporarily disabled with `git rm`
+src/codegen/old_typecheck.py

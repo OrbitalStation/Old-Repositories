@@ -1,0 +1,53 @@
+* `:=` tries to take a ref of the left-side expr and then write the right-side expr into that ref
+
+pub enum MemoryState = Valid or Uninitialized
+
+pub ty PtrCompilerMetadata
+	* The state of the memory the pointer points to
+	pub memState: MemoryState
+
+	* The length of the memory
+	pub memBytesLen: u32
+
+	* An actual type the pointer points to(if there is one)
+	pub pointsTo: typeid?
+
+	* Is it allowed to modify content of the pointer?
+	pub isReadonly: bool
+
+	* The type of allocator that supplied the pointer(if any)
+	* Used to determine if the pointer is fed into correct `Allocator::dealloc`
+	pub allocatedBy: typeid?
+
+inj PtrCompilerMetadata
+	pub static fun null = Me::new(Uninitialized, 0, None, yes)
+
+	pub static fun isValidPtrToOneObject[T] -> bool
+	 	val isMemValid = i.memState == Valid
+	 	val doTypesMatch = i.pointsTo.map { std::typeid::of[T] == it }.unwrapOr(no)
+	 	val typesMemLenMatch = i.memBytesLen == std::sizeof[T]
+	 	return isMemValid and doTypesMatch and typesMemLenMatch
+
+* This macro makes the compiler create instances of `PtrCompilerMetadata` for every instance of `ptr`
+*	in compile time, so that this value may be retrieved later(but only in compile-time contexts)
+* `@default.new.vis = "private"` makes the default-generated function `new` to be private, i.e.
+*	accessible only within the type
+* Also, if a type has associated metadata then this metadata is set to a default value in the `new` method
+* `@copyable` attribute corresponds to Rust's `#[derive(Copy)]`
+@metadata.set("each") = "PtrCompilerMetadata"
+@default.new.vis = "private"
+pub copyable ty ptr = address: ups
+
+inj ptr
+	* `metadata::with` sets the given metadata for an instance of type
+	pub static fun null = metadata::with(Me::new(0), PtrCompilerMetadata::null)
+
+	pub fun isNull = i.address == 0
+
+contract pointToSth = metadata::each(i).pointsTo.isSome
+
+* `@where.onBad.errMsg` is used to provide a custom error description if a bound is not found
+inj Deref in pointsToSth ptr
+    * `typeof` is an alias that accepts a generic val of type `std::typeid` and returns an actual type
+    alias Target = std::typeof[metadata::each(&i).pointsTo.unwrap]
+    builtin fun deref.~ -> ~Me::Target

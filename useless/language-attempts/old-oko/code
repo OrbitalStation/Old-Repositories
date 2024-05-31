@@ -1,0 +1,15 @@
+ty Filter
+	iter: u8
+	pred: u8
+
+	id.& = i
+
+ty Info
+	date timestamp: i32
+	otherInfo: u8
+	filter: Filter
+
+	id.& = i
+
+ty Short = a: i8 + b: u8 + c: Info
+	id.& = i
